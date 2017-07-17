@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import gevent
 import networkx as nx
-import json
 
 from datetime import datetime
 
 from twitter_api_async import API_HANDLER as TW
-from twisted.internet import reactor
 
 from localsettings import AUTH_DATA
 
@@ -29,14 +28,15 @@ cand_ids = ['845696348', '325778405']
 
 uids = cand_ids + uids
 
-for uid in enumerate(uids):
+gevent_funcs = []
+
+for _, uid in enumerate(uids):
     for credential_index in xrange(len(AUTH_DATA)):
-        reactor.callWhenRunning(TW.traer_timeline, credential_index, uid, DESDE)
+        gevent_funcs.append(gevent.spawn(TW.traer_timeline, credential_index, uid, DESDE))
 
-# 1 día de tweets, 28k usuarios, 7hs (a tener en cuenta ...), inspeccionar 'tw_handler.tweets'
-
-reactor.run()
-
-for uid, value in TW.tweets.items():
-    with open('tweets_%s.json' % uid, 'w') as f:
-        json.dump(value, f)     # TODO: revisar posible duplicación de tweets
+try:
+    gevent.joinall(gevent_funcs)
+except KeyboardInterrupt:
+    pass
+finally:
+    TW.save_tweets()
