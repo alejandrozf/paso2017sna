@@ -17,7 +17,7 @@ class APIHandler(object):
         self.auth_data = auth_data
         self.max_nreqs = max_nreqs
         self.tweets = {}
-        # para marcar hasta la página actual que se han bajado tweers para cada usuario
+        # para marcar hasta la página actual que se han bajado tweets para cada usuario
         # y proseguir la bajada a partir de ahí
         self.tweets_active_pages = {}
         self.feeds = {}
@@ -70,36 +70,38 @@ class APIHandler(object):
 
     def traer_timeline(self, credential_index, uid, date_lower_limit):
         page = self.tweets_active_pages.get(uid, 1)
-        done = False
-        self.get_fresh_connection(credential_index, uid)
-        while not done:
-            try:
-                print "trying to fetch timeline for user with id={0}".format(uid)
-                page_tweets = self.conn_.user_timeline(user_id=uid, page=page)
-                if not page_tweets:
-                    done = True
-                    print("Done with uid:{0}".format(uid))
-                    break
-                for tw in page_tweets:
-                    if tw.created_at < date_lower_limit:
+        if page != -1:          # ya se terminaron de cargar los tweets de este usuario
+            done = False
+            self.get_fresh_connection(credential_index, uid)
+            while not done:
+                try:
+                    print "trying to fetch timeline for user with id={0}".format(uid)
+                    page_tweets = self.conn_.user_timeline(user_id=uid, page=page)
+                    if not page_tweets:
                         done = True
+                        self.tweets_active_pages[uid] = -1
+                        print("Done with uid:{0}".format(uid))
+                        break
+                    for tw in page_tweets:
+                        if tw.created_at < date_lower_limit:
+                            done = True
+                            break
+                        else:
+                            if self.tweets.get(uid, False):
+                                self.tweets[uid].append(tw._json)
+                            else:
+                                self.tweets[uid] = [tw._json]
+                            print "fetched {0} tweets for uid={1}".format(len(self.tweets[uid]), uid)
+                    page += 1
+                except Exception, e:
+                    print("Error {0} processing id={1} with credential={2}:".format(
+                        e.message, uid, credential_index))
+                    if e.message == u'Not authorized.':
                         break
                     else:
-                        if self.tweets.get(uid, False):
-                            self.tweets[uid].append(tw._json)
-                        else:
-                            self.tweets[uid] = [tw._json]
-                        print "fetched {0} tweets for uid={1}".format(len(self.tweets[uid]), uid)
-                page += 1
-            except Exception, e:
-                print("Error {0} processing id={1} with credential={2}:".format(
-                    e.message, uid, credential_index))
-                if e.message == u'Not authorized.':
-                    break
-                else:
-                    # salvando el número de página de tweets bajados para retomar a partir de ahí
-                    self.tweets_active_pages[uid] = page
-                    gevent.sleep(0)
+                        # salvando el número de página de tweets bajados para retomar a partir de ahí
+                        self.tweets_active_pages[uid] = page
+                        gevent.sleep(0)
 
 
 API_HANDLER = APIHandler(AUTH_DATA)
