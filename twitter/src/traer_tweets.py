@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import division
+
 import json
 import networkx as nx
 
 from datetime import date, datetime
-from random import sample
 from os.path import join
+from time import time
+from random import sample
 
 from twitter_api import API_HANDLER as TW
 
@@ -19,6 +22,8 @@ cuentas = [
     'HectorBaldassi',
     'MartinLlaryora',
 ]
+
+init_total_time = time()
 
 gpath = join(DATA_PATH, 'red_cands5k.graphml')
 g = nx.read_graphml(gpath)
@@ -48,7 +53,6 @@ uids = cand_ids + list(set(uids))
 
 # with open("tl_uids.json") as f:
 #     uids = json.load(f)
-len(uids)
 
 tweets = {}
 # with open('tweets_%s.json' % datetime.strftime(DIA, '%m-%d')) as f:
@@ -62,7 +66,12 @@ for i, uid in enumerate(uids):
         continue
     tweets[uid] = TW.traer_timeline(uid, dia=DIA)
 
-len(tweets)
+
+end_total_time = time() - init_total_time
+n_users = len(uids)
+n_tweets = len(tweets)
+avg_tweets_per_user = n_tweets / n_users
+avg_time_per_tweet = end_total_time / n_tweets
 
 twpath = join(DATA_PATH, 'tweets_%s.json' % datetime.strftime(DIA, '%m-%d'))
 with open(twpath, 'w') as f:
