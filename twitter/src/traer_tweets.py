@@ -57,6 +57,9 @@ uids = cand_ids + list(set(uids))
 tweets = {}
 # with open('tweets_%s.json' % datetime.strftime(DIA, '%m-%d')) as f:
 #     tweets = json.load(f)
+n_tweets = 0
+users_time = []
+
 
 for i, uid in enumerate(uids):
     if i % 5 == 0:
@@ -64,14 +67,25 @@ for i, uid in enumerate(uids):
         print("%.1f %%" % perc)
     if uid in tweets:
         continue
+    user_init_time = time()
     tweets[uid] = TW.traer_timeline(uid, dia=DIA)
+    user_time = time() - user_init_time
+    users_time.append(user_time)
+    n_tweets += len(tweets[uid])
 
-
-end_total_time = time() - init_total_time
 n_users = len(uids)
-n_tweets = len(tweets)
+total_time = time() - init_total_time
 avg_tweets_per_user = n_tweets / n_users
-avg_time_per_tweet = end_total_time / n_tweets
+avg_time_per_tweet = total_time / n_tweets
+avg_user_time = sum(users_time) / len(users_time)
+
+print "Tiempo total: {0}".format(total_time)
+print "Cantidad media de tweets por usuario: {0}".format(avg_tweets_per_user)
+print "Tiempo promedio de descarga de cada tweet: {0}".format(avg_time_per_tweet)
+print "Tiempo promedio de descarga de todos los tweets de un usuario: {0}".format(avg_user_time)
+
+
+print "Guardando tweets ..."
 
 twpath = join(DATA_PATH, 'tweets_%s.json' % datetime.strftime(DIA, '%m-%d'))
 with open(twpath, 'w') as f:
