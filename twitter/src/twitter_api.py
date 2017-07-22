@@ -101,28 +101,30 @@ class APIHandler(object):
     def traer_timeline(self, user_id, desde=None, hasta=None, dia=None, limite=None):
         page = 1
         tweets = []
+        done = False
         if dia:
             desde = dia
             hasta = dia
 
-        while True:
+        while not done:
             try:
                 page_tweets = self.conn_.user_timeline(user_id=user_id, page=page)
                 if not page_tweets:
                     break
 
-                for tw in page_tweets: 
+                for tw in page_tweets:
                     # print(tw.text)
                     if desde and tw.created_at.date() < desde:
+                        done = True
                         break
                     if hasta and tw.created_at.date() > hasta:
-                        continue                        
+                        continue
 
                     tweets.append(tw._json) # =dia or >= desde
                     if limite and len(tweets) >= limite:
                         break
                 page += 1
-            except Exception, e:                
+            except Exception, e:
                 if e.message == u'Not authorized.':
                     break
                 else:
