@@ -16,7 +16,8 @@ from localsettings import DATA_PATH
 
 DATA_PATH = join(DATA_PATH, './reporte_07_26')
 
-DIA = date(year=2017, month=7, day=18)
+DESDE = date(year=2017, month=7, day=19)
+HASTA = date(year=2017, month=7, day=21)
 
 cuentas = [
     'HectorBaldassi',
@@ -65,7 +66,7 @@ for i, uid in enumerate(uids):
     if uid in tweets:
         continue
     user_init_time = time()
-    tweets[uid] = TW.traer_timeline(uid, dia=DIA)
+    tweets[uid] = TW.traer_timeline(uid, desde=DESDE, hasta=HASTA)
     user_time = time() - user_init_time
     users_time.append(user_time)
     n_tweets += len(tweets[uid])
@@ -83,6 +84,6 @@ print "Tiempo promedio de descarga de todos los tweets de un usuario: {0}".forma
 
 print "Guardando {0} tweets".format(n_tweets)
 
-twpath = join(DATA_PATH, 'tweets_%s.json' % datetime.strftime(DIA, '%m-%d'))
+twpath = join(DATA_PATH, 'tweets_%s.json' % datetime.strftime(DESDE, '%m-%d'))
 with open(twpath, 'w') as f:
     json.dump(tweets, f)
