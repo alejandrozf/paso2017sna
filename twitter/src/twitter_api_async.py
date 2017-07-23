@@ -51,8 +51,8 @@ class APIHandler(object):
     def set_connection(self, credential_index):
         if not self.connections.get(credential_index, False):
             self.get_fresh_connection(credential_index)
-        else:
-            print "Using API Credential #{0}".format(credential_index)
+        # else:
+        #     print "Using API Credential #{0}".format(credential_index)
 
     def traer_seguidores(self, credential_index, uid, date_lower_limit, **kwargs):
         cursor = -1
@@ -74,8 +74,8 @@ class APIHandler(object):
 
     def _end_uid_connection(self, uid):
         self.tweets_active_pages[uid] = -1
-        n_tweets_uid = len(self.tweets[uid])
-        print "Done with uid:{0}, {1} tweets fetched ".format(uid, n_tweets_uid)
+        # n_tweets_uid = len(self.tweets[uid])
+        # print "Done with uid:{0}, {1} tweets fetched ".format(uid, n_tweets_uid)
 
     def _add_tweets(self, uid, page_tweets, desde, hasta):
         for tw in page_tweets:
@@ -103,6 +103,7 @@ class APIHandler(object):
                 try:
                     self.tweets_active_pages[uid] += 1
                     page = self.tweets_active_pages[uid]
+                    # print page, uid
                     attempt_initial_time = time()
                     page_tweets = self.connections[credential_index].user_timeline(
                         user_id=uid, page=page)

@@ -16,8 +16,8 @@ from localsettings import DATA_PATH
 
 DATA_PATH = join(DATA_PATH, './reporte_07_26')
 
-DESDE = date(year=2017, month=7, day=19)
-HASTA = date(year=2017, month=7, day=21)
+DESDE = date(year=2017, month=7, day=21)
+HASTA = date(year=2017, month=7, day=23)
 
 cuentas = [
     'HectorBaldassi',
@@ -42,8 +42,10 @@ uids = cand_ids + uids
 # Por ahora traemos tweets solo de 100 en cada audiencia
 
 uids = []
-uids += sample(g.predecessors(cand_ids[0]), 100)
-uids += sample(g.predecessors(cand_ids[1]), 100)
+# uids += sample(g.predecessors(cand_ids[0]), 100)
+# uids += sample(g.predecessors(cand_ids[1]), 100)
+uids += g.predecessors(cand_ids[0])[:100]
+uids += g.predecessors(cand_ids[1])[:100]
 uids = cand_ids + list(set(uids))
 
 # fpath = join(DATA_PATH, "tl_uids.json")

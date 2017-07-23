@@ -7,6 +7,7 @@ import networkx as nx
 
 from datetime import date
 from os.path import join
+from random import sample
 from time import time
 
 from twitter_api_async import API_HANDLER as TW
@@ -15,8 +16,8 @@ from localsettings import AUTH_DATA, DATA_PATH
 
 DATA_PATH = join(DATA_PATH, './reporte_07_26')
 
-DESDE = date(year=2017, month=7, day=19)
-HASTA = date(year=2017, month=7, day=19)
+DESDE = date(year=2017, month=7, day=21)
+HASTA = date(year=2017, month=7, day=23)
 
 cuentas = [
     'HectorBaldassi',
@@ -38,11 +39,37 @@ cand_ids = ['845696348', '325778405']
 
 uids = cand_ids + uids
 
+# Por ahora traemos tweets solo de 100 en cada audiencia
+
+uids = []
+# uids += sample(g.predecessors(cand_ids[0]), 100)
+# uids += sample(g.predecessors(cand_ids[1]), 100)
+uids += g.predecessors(cand_ids[0])[:100]
+uids += g.predecessors(cand_ids[1])[:100]
+uids = cand_ids + list(set(uids))
+
+# fpath = join(DATA_PATH, "tl_uids.json")
+# with open(fpath, "w") as f:
+#     json.dump(uids, f)
+
+# with open("tl_uids.json") as f:
+#     uids = json.load(f)
+
+tweets = {}
+# with open('tweets_%s.json' % datetime.strftime(DIA, '%m-%d')) as f:
+#     tweets = json.load(f)
+n_tweets = 0
+users_time = []
+
 gevent_funcs = []
 
+n_auth_data = len(AUTH_DATA)
+credential_index_list = sample(xrange(n_auth_data), n_auth_data)
+
 for _, uid in enumerate(uids):
-    for credential_index in xrange(len(AUTH_DATA)):
-        gevent_funcs.append(gevent.spawn(TW.traer_timeline, uid, credential_index, desde=DESDE, hasta=HASTA))
+    for credential_index in credential_index_list:
+        gevent_funcs.append(
+            gevent.spawn(TW.traer_timeline, uid, credential_index, desde=DESDE, hasta=HASTA))
 
 try:
     gevent.joinall(gevent_funcs)

@@ -105,8 +105,7 @@ class APIHandler(object):
         if dia:
             desde = dia
             hasta = dia
-
-        while True:
+        while not done:
             try:
                 page_tweets = self.conn_.user_timeline(user_id=user_id, page=page)
                 if not page_tweets:
@@ -115,6 +114,7 @@ class APIHandler(object):
                 for tw in page_tweets:
                     # print(tw.text)
                     if desde and tw.created_at.date() < desde:
+                        done = True
                         break
                     if hasta and tw.created_at.date() > hasta:
                         continue
@@ -124,6 +124,7 @@ class APIHandler(object):
                         break
                 page += 1
             except Exception, e:
+                print("Error {0} processing id={1} :".format(e.message, user_id))
                 if e.message == u'Not authorized.':
                     break
                 else:
