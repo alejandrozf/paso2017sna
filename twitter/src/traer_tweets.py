@@ -77,12 +77,13 @@ avg_tweets_per_user = n_tweets / n_users
 avg_time_per_tweet = total_time / n_tweets
 avg_user_time = sum(users_time) / len(users_time)
 
-print "Tiempo total: {0}".format(total_time)
+print "Tiempo total: {0} segundos".format(total_time)
 print "Cantidad media de tweets por usuario: {0}".format(avg_tweets_per_user)
-print "Tiempo promedio de descarga de cada tweet: {0}".format(avg_time_per_tweet)
-print "Tiempo promedio de descarga de todos los tweets de un usuario: {0}".format(avg_user_time)
+print "Tiempo promedio de descarga de cada tweet: {0} segundos".format(avg_time_per_tweet)
+print "Tiempo promedio de descarga de todos los tweets de un usuario: {0} segundos".format(
+    avg_user_time)
 
-print "Guardando {0} tweets".format(n_tweets)
+print "Guardando {0} tweets ...".format(n_tweets)
 
 twpath = join(DATA_PATH, 'tweets_%s.json' % datetime.strftime(DESDE, '%m-%d'))
 with open(twpath, 'w') as f:

@@ -106,7 +106,7 @@ class APIHandler(object):
             desde = dia
             hasta = dia
 
-        while not done:
+        while True:
             try:
                 page_tweets = self.conn_.user_timeline(user_id=user_id, page=page)
                 if not page_tweets:
@@ -115,7 +115,6 @@ class APIHandler(object):
                 for tw in page_tweets:
                     # print(tw.text)
                     if desde and tw.created_at.date() < desde:
-                        done = True
                         break
                     if hasta and tw.created_at.date() > hasta:
                         continue
