@@ -98,7 +98,7 @@ class APIHandler(object):
         return fids
 
 
-    def traer_timeline(self, user_id, desde=None, hasta=None, dia=None, limite=None):
+    def traer_timeline(self, user_id, n_pages=None, desde=None, hasta=None, dia=None, limite=None):
         page = 1
         tweets = []
         done = False
@@ -107,21 +107,25 @@ class APIHandler(object):
             hasta = dia
         while not done:
             try:
+                if n_pages and page > n_pages:
+                    break
                 page_tweets = self.conn_.user_timeline(user_id=user_id, page=page)
                 if not page_tweets:
                     break
+                if n_pages and page <= n_pages:
+                    tweets += [tw._json for tw in page_tweets]
+                else:
+                    for tw in page_tweets:
+                        # print(tw.text)
+                        if desde and tw.created_at.date() < desde:
+                            done = True
+                            break
+                        if hasta and tw.created_at.date() > hasta:
+                            continue
 
-                for tw in page_tweets:
-                    # print(tw.text)
-                    if desde and tw.created_at.date() < desde:
-                        done = True
-                        break
-                    if hasta and tw.created_at.date() > hasta:
-                        continue
-
-                    tweets.append(tw._json) # =dia or >= desde
-                    if limite and len(tweets) >= limite:
-                        break
+                        tweets.append(tw._json) # =dia or >= desde
+                        if limite and len(tweets) >= limite:
+                            break
                 page += 1
             except Exception, e:
                 print("Error {0} processing id={1} :".format(e.message, user_id))

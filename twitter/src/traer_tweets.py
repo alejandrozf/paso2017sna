@@ -18,6 +18,7 @@ DATA_PATH = join(DATA_PATH, './reporte_07_26')
 
 DESDE = date(year=2017, month=7, day=21)
 HASTA = date(year=2017, month=7, day=23)
+PAGES = 10
 
 cuentas = [
     'HectorBaldassi',
@@ -68,7 +69,7 @@ for i, uid in enumerate(uids):
     if uid in tweets:
         continue
     user_init_time = time()
-    tweets[uid] = TW.traer_timeline(uid, desde=DESDE, hasta=HASTA)
+    tweets[uid] = TW.traer_timeline(uid, n_pages=PAGES)
     user_time = time() - user_init_time
     users_time.append(user_time)
     n_tweets += len(tweets[uid])

@@ -18,6 +18,7 @@ DATA_PATH = join(DATA_PATH, './reporte_07_26')
 
 DESDE = date(year=2017, month=7, day=21)
 HASTA = date(year=2017, month=7, day=23)
+PAGES = 10
 
 cuentas = [
     'HectorBaldassi',
@@ -69,7 +70,7 @@ credential_index_list = sample(xrange(n_auth_data), n_auth_data)
 for _, uid in enumerate(uids):
     for credential_index in credential_index_list:
         gevent_funcs.append(
-            gevent.spawn(TW.traer_timeline, uid, credential_index, desde=DESDE, hasta=HASTA))
+            gevent.spawn(TW.traer_timeline, uid, credential_index, n_pages=PAGES))
 
 try:
     gevent.joinall(gevent_funcs)

@@ -72,8 +72,10 @@ class APIHandler(object):
                         print "Rate limit reached for this conexion"
                         gevent.sleep(0)
 
-    def _end_uid_connection(self, uid):
+    def _end_uid_connection(self, uid, added_time=None):
         self.tweets_active_pages[uid] = -1
+        if added_time:
+            self.user_tweets_download_time[uid] += added_time
         # n_tweets_uid = len(self.tweets[uid])
         # print "Done with uid:{0}, {1} tweets fetched ".format(uid, n_tweets_uid)
 
@@ -88,7 +90,7 @@ class APIHandler(object):
             self.tweets[uid].append(tw._json)
         return False
 
-    def traer_timeline(self, uid, credential_index, desde=None, hasta=None, dia=None):
+    def traer_timeline(self, uid, credential_index, n_pages=None, desde=None, hasta=None, dia=None):
         if self.tweets_active_pages[uid] != -1:
             # no se han terminado de cargar los tweets de este usuario
             user_init_time = time()
@@ -101,16 +103,21 @@ class APIHandler(object):
             self.user_tweets_download_time[uid] += connection_stablished_time - user_init_time
             while not done:
                 try:
+                    attempt_initial_time = time()
                     self.tweets_active_pages[uid] += 1
                     page = self.tweets_active_pages[uid]
-                    # print page, uid
-                    attempt_initial_time = time()
+                    if n_pages and page > n_pages:
+                        self._end_uid_connection(uid, added_time=time() - attempt_initial_time)
+                        break
                     page_tweets = self.connections[credential_index].user_timeline(
                         user_id=uid, page=page)
                     if not page_tweets:
-                        self._end_uid_connection(uid)
+                        self._end_uid_connection(uid, added_time=time() - attempt_initial_time)
                         break
-                    done = self._add_tweets(uid, page_tweets, desde, hasta)
+                    if n_pages and page <= n_pages:
+                        self.tweets[uid] += [tw._json for tw in page_tweets]
+                    else:
+                        done = self._add_tweets(uid, page_tweets, desde, hasta)
                     self.user_tweets_download_time[uid] += time() - attempt_initial_time
                 except Exception, e:
                     self.user_tweets_download_time[uid] += time() - attempt_initial_time
