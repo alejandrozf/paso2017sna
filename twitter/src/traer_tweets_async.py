@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import division
+from gevent import monkey, spawn, joinall; monkey.patch_all()
 
-import gevent
 import networkx as nx
 
 from datetime import date
@@ -18,7 +18,7 @@ DATA_PATH = join(DATA_PATH, './reporte_07_26')
 
 DESDE = date(year=2017, month=7, day=21)
 HASTA = date(year=2017, month=7, day=23)
-PAGES = 10
+# PAGES = 30
 
 cuentas = [
     'HectorBaldassi',
@@ -70,19 +70,20 @@ credential_index_list = sample(xrange(n_auth_data), n_auth_data)
 for _, uid in enumerate(uids):
     for credential_index in credential_index_list:
         gevent_funcs.append(
-            gevent.spawn(TW.traer_timeline, uid, credential_index, n_pages=PAGES))
+            spawn(TW.traer_timeline, uid, credential_index, desde=DESDE, hasta=HASTA))
 
 try:
-    gevent.joinall(gevent_funcs)
+    joinall(gevent_funcs)
 except KeyboardInterrupt:
     pass
 finally:
-    n_tweets = sum([len(value) for value in TW.tweets.values()])
+    # n_tweets = sum([len(value) for value in TW.tweets.values()])
+    n_tweets = TW.num_total_tweets()
     n_users = len(uids)
     total_time = time() - init_total_time
     avg_tweets_per_user = n_tweets / n_users
     avg_time_per_tweet = total_time / n_tweets
-    avg_user_time = sum(TW.user_tweets_download_time.values()) / len(TW.user_tweets_download_time)
+    avg_user_time = total_time / n_users
 
     print "Tiempo total: {0} segundos".format(total_time)
     print "Cantidad media de tweets por usuario: {0}".format(avg_tweets_per_user)
@@ -90,5 +91,5 @@ finally:
     print "Tiempo promedio de descarga de todos los tweets de un usuario: {0} segundos".format(
         avg_user_time)
 
-    print "Guardando {0} tweets ...".format(n_tweets)
-    TW.save_tweets(DESDE)
+    print "Descargados {0} tweets ...".format(n_tweets)
+    # TW.save_tweets(DESDE)
