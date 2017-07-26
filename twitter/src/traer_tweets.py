@@ -2,15 +2,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import division
 
-import json
+# import json
 import networkx as nx
 
-from datetime import date, datetime
+from datetime import date
 from os.path import join
 from time import time
-from random import sample
+# from random import sample
 
 from twitter_api import API_HANDLER as TW
+from pymongo import MongoClient
 
 from localsettings import DATA_PATH
 
@@ -18,7 +19,14 @@ DATA_PATH = join(DATA_PATH, './reporte_07_26')
 
 DESDE = date(year=2017, month=7, day=21)
 HASTA = date(year=2017, month=7, day=23)
-PAGES = 10
+PAGES = 30
+
+MONGO_HOST = 'mongodb://localhost/twitterdb'
+client = MongoClient(MONGO_HOST)
+
+tweets_db = client.paso2017_sync
+
+client = MongoClient(MONGO_HOST)
 
 cuentas = [
     'HectorBaldassi',
@@ -69,10 +77,12 @@ for i, uid in enumerate(uids):
     if uid in tweets:
         continue
     user_init_time = time()
-    tweets[uid] = TW.traer_timeline(uid, n_pages=PAGES)
+    tweets = TW.traer_timeline(uid, desde=DESDE, hasta=HASTA)
+    if tweets != []:
+        tweets_db[uid].insert_many(tweets)
     user_time = time() - user_init_time
     users_time.append(user_time)
-    n_tweets += len(tweets[uid])
+    n_tweets += len(tweets)
 
 n_users = len(uids)
 total_time = time() - init_total_time
@@ -86,8 +96,4 @@ print "Tiempo promedio de descarga de cada tweet: {0} segundos".format(avg_time_
 print "Tiempo promedio de descarga de todos los tweets de un usuario: {0} segundos".format(
     avg_user_time)
 
-print "Guardando {0} tweets ...".format(n_tweets)
-
-twpath = join(DATA_PATH, 'tweets_%s.json' % datetime.strftime(DESDE, '%m-%d'))
-with open(twpath, 'w') as f:
-    json.dump(tweets, f)
+print "Descargados {0} tweets ...".format(n_tweets)
