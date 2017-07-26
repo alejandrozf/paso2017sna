@@ -1,17 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import json
-import gevent
 
 from collections import defaultdict
 from datetime import datetime
-from time import time, sleep
+from time import sleep
 from os.path import join
 
+from pymongo import MongoClient
 from tweepy import AppAuthHandler, API
 from tweepy.error import TweepError
 
 from localsettings import AUTH_DATA, DATA_PATH
+
+MONGO_HOST = 'mongodb://localhost/twitterdb'
 
 
 class APIHandler(object):
@@ -19,7 +21,8 @@ class APIHandler(object):
     def __init__(self, auth_data, max_nreqs=10):
         self.auth_data = auth_data
         self.max_nreqs = max_nreqs
-        self.tweets = defaultdict(list)
+        client = MongoClient(MONGO_HOST)
+        self.tweets = client.paso2017_async
         # para marcar hasta la página actual que se han bajado tweets para cada usuario
         # y proseguir la bajada a partir de ahí
         self.tweets_active_pages = defaultdict(int)
@@ -28,6 +31,15 @@ class APIHandler(object):
         self.feeds = {}
         # guardamos las conexiones por credencial para poder reusarlas luego de ser necesario
         self.connections = {}
+
+    def num_user_tweets(self, uid):
+        return self.tweets[uid].count()
+
+    def num_total_tweets(self):
+        count = 0
+        for collection_name in self.tweets.collection_names():
+            count += self.tweets.get_collection(collection_name).count()
+        return count
 
     def save_tweets(API_HANDLER_instance, initial_day):
         twpath = join(DATA_PATH, 'tweets_async_%s.json' % datetime.strftime(initial_day, '%m-%d'))
@@ -70,7 +82,6 @@ class APIHandler(object):
                     else:
                         print e
                         print "Rate limit reached for this conexion"
-                        gevent.sleep(0)
 
     def _end_uid_connection(self, uid, added_time=None):
         self.tweets_active_pages[uid] = -1
@@ -79,48 +90,41 @@ class APIHandler(object):
         # n_tweets_uid = len(self.tweets[uid])
         # print "Done with uid:{0}, {1} tweets fetched ".format(uid, n_tweets_uid)
 
-    def _add_tweets(self, uid, page_tweets, desde, hasta):
+    def _add_tweets(self, uid, page_tweets, desde, hasta, validate=True):
         for tw in page_tweets:
             # print(tw.text)
-            if desde and tw.created_at.date() < desde:
+            if validate and desde and tw.created_at.date() < desde:
                 self._end_uid_connection(uid)
                 return True     # hay que terminar la descarga de tweets
-            if hasta and tw.created_at.date() > hasta:
+            if validate and hasta and tw.created_at.date() > hasta:
                 continue
-            self.tweets[uid].append(tw._json)
+            tweet_doc = tw._json
+            self.tweets[uid].update_one(tweet_doc, {'$set': tweet_doc}, upsert=True)
         return False
 
     def traer_timeline(self, uid, credential_index, n_pages=None, desde=None, hasta=None, dia=None):
         if self.tweets_active_pages[uid] != -1:
             # no se han terminado de cargar los tweets de este usuario
-            user_init_time = time()
             done = False
             if dia:
                 desde = dia
                 hasta = dia
             self.set_connection(credential_index)
-            connection_stablished_time = time()
-            self.user_tweets_download_time[uid] += connection_stablished_time - user_init_time
             while not done:
                 try:
-                    attempt_initial_time = time()
                     self.tweets_active_pages[uid] += 1
                     page = self.tweets_active_pages[uid]
                     if n_pages and page > n_pages:
-                        self._end_uid_connection(uid, added_time=time() - attempt_initial_time)
                         break
                     page_tweets = self.connections[credential_index].user_timeline(
                         user_id=uid, page=page)
                     if not page_tweets:
-                        self._end_uid_connection(uid, added_time=time() - attempt_initial_time)
                         break
                     if n_pages and page <= n_pages:
-                        self.tweets[uid] += [tw._json for tw in page_tweets]
+                        self._add_tweets(uid, page_tweets, None, None, validate=False)
                     else:
                         done = self._add_tweets(uid, page_tweets, desde, hasta)
-                    self.user_tweets_download_time[uid] += time() - attempt_initial_time
                 except Exception, e:
-                    self.user_tweets_download_time[uid] += time() - attempt_initial_time
                     print("Error {0} processing id={1} with credential={2}:".format(
                         e.message, uid, credential_index))
                     if e.message == u'Not authorized.':
@@ -131,7 +135,6 @@ class APIHandler(object):
                         # ahí en las nuevas bajadas
                         self.tweets_active_pages[uid] = page
                         print "Moving to another connection ..."
-                        gevent.sleep(0)
 
 
 API_HANDLER = APIHandler(AUTH_DATA)
