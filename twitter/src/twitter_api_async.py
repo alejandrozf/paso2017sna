@@ -91,13 +91,13 @@ class APIHandler(object):
         n_tweets_uid = self.tweets[uid].count()
         print "Done with uid:{0}, {1} tweets fetched ".format(uid, n_tweets_uid)
 
-    def _add_tweets(self, uid, page_tweets, desde, hasta, validate=True):
+    def _add_tweets(self, uid, page_tweets, desde, hasta):
         for tw in page_tweets:
             # print(tw.text)
-            if validate and desde and tw.created_at.date() < desde:
+            if desde and tw.created_at.date() < desde:
                 self._end_uid_connection(uid)
                 return True     # hay que terminar la descarga de tweets
-            if validate and hasta and tw.created_at.date() > hasta:
+            if hasta and tw.created_at.date() > hasta:
                 continue
             tweet_doc = tw._json
             self.tweets[uid].update_one(tweet_doc, {'$set': tweet_doc}, upsert=True)
@@ -123,7 +123,7 @@ class APIHandler(object):
                     if not page_tweets:
                         break
                     if n_pages and page <= n_pages:
-                        self._add_tweets(uid, page_tweets, None, None, validate=False)
+                        self._add_tweets(uid, page_tweets, None, None)
                     else:
                         done = self._add_tweets(uid, page_tweets, desde, hasta)
                 except Exception, e:
