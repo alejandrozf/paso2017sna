@@ -13,7 +13,7 @@ from tweepy.error import TweepError
 
 from localsettings import AUTH_DATA, DATA_PATH
 
-MONGO_HOST = 'mongodb://localhost/twitterdb'
+MONGO_HOST = 'mongodb://localhost/paso2017_async'
 
 
 class APIHandler(object):
@@ -31,6 +31,7 @@ class APIHandler(object):
         self.feeds = {}
         # guardamos las conexiones por credencial para poder reusarlas luego de ser necesario
         self.connections = {}
+        self.threads = defaultdict(list)
 
     def num_user_tweets(self, uid):
         return self.tweets[uid].count()
@@ -85,10 +86,10 @@ class APIHandler(object):
 
     def _end_uid_connection(self, uid, added_time=None):
         self.tweets_active_pages[uid] = -1
-        if added_time:
-            self.user_tweets_download_time[uid] += added_time
-        # n_tweets_uid = len(self.tweets[uid])
-        # print "Done with uid:{0}, {1} tweets fetched ".format(uid, n_tweets_uid)
+        for thread in self.threads[uid]:
+            thread._Thread__stop()
+        n_tweets_uid = self.tweets[uid].count()
+        print "Done with uid:{0}, {1} tweets fetched ".format(uid, n_tweets_uid)
 
     def _add_tweets(self, uid, page_tweets, desde, hasta, validate=True):
         for tw in page_tweets:
@@ -114,6 +115,7 @@ class APIHandler(object):
                 try:
                     self.tweets_active_pages[uid] += 1
                     page = self.tweets_active_pages[uid]
+                    print "uid={0}, page={1}, credential_index={2}".format(uid, page, credential_index)
                     if n_pages and page > n_pages:
                         break
                     page_tweets = self.connections[credential_index].user_timeline(
@@ -135,6 +137,7 @@ class APIHandler(object):
                         # ahí en las nuevas bajadas
                         self.tweets_active_pages[uid] = page
                         print "Moving to another connection ..."
+            return
 
 
 API_HANDLER = APIHandler(AUTH_DATA)

@@ -67,33 +67,30 @@ threads = []
 n_auth_data = len(AUTH_DATA)
 credential_index_list = sample(xrange(n_auth_data), n_auth_data)
 
-try:
-    for _, uid in enumerate(uids):
-        for credential_index in credential_index_list:
-            t = threading.Thread(
-                target=TW.traer_timeline, args=(uid, credential_index),
-                kwargs={'desde': DESDE, 'hasta': HASTA})
-            threads.append(t)
-            t.start()
-        while True:
-            thread_status = [thread.isAlive() for thread in threads]
-            if not any(thread_status):
-                break
-except KeyboardInterrupt:
-    pass
-finally:
-    n_tweets = TW.num_total_tweets()
-    n_users = len(uids)
-    total_time = time() - init_total_time
-    avg_tweets_per_user = n_tweets / n_users
-    avg_time_per_tweet = total_time / n_tweets
-    avg_user_time = total_time / n_users
+for _, uid in enumerate(uids):
+    for credential_index in credential_index_list:
+        t = threading.Thread(
+            target=TW.traer_timeline, args=(uid, credential_index),
+            kwargs={'desde': DESDE, 'hasta': HASTA})
+        TW.threads[uid].append(t)
+        t.start()
+    while True:
+        thread_status = [thread.isAlive() for thread in threads]
+        if not any(thread_status):
+            break
 
-    print "Tiempo total: {0} segundos".format(total_time)
-    print "Cantidad media de tweets por usuario: {0}".format(avg_tweets_per_user)
-    print "Tiempo promedio de descarga de cada tweet: {0} segundos".format(avg_time_per_tweet)
-    print "Tiempo promedio de descarga de todos los tweets de un usuario: {0} segundos".format(
-        avg_user_time)
+n_tweets = TW.num_total_tweets()
+n_users = len(uids)
+total_time = time() - init_total_time
+avg_tweets_per_user = n_tweets / n_users
+avg_time_per_tweet = total_time / n_tweets
+avg_user_time = total_time / n_users
 
-    print "Descargados {0} tweets ...".format(n_tweets)
-    # TW.save_tweets(DESDE)
+print "Tiempo total: {0} segundos".format(total_time)
+print "Cantidad media de tweets por usuario: {0}".format(avg_tweets_per_user)
+print "Tiempo promedio de descarga de cada tweet: {0} segundos".format(avg_time_per_tweet)
+print "Tiempo promedio de descarga de todos los tweets de un usuario: {0} segundos".format(
+    avg_user_time)
+
+print "Descargados {0} tweets ...".format(n_tweets)
+# TW.save_tweets(DESDE)
