@@ -116,7 +116,7 @@ class APIHandler(object):
                     if not page_tweets:
                         break
                     if n_pages and page <= n_pages:
-                        self.tweets[uid].update_many(page_tweets, page_tweets, upsert=True)
+                        self._add_tweets(uid, page_tweets, False, False)
                     else:
                         done = self._add_tweets(uid, page_tweets, desde, hasta)
                 except Exception, e:
