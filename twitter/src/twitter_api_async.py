@@ -4,6 +4,7 @@ from gevent import monkey, sleep; monkey.patch_all()
 # import traceback
 
 from collections import defaultdict
+from random import choice
 
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import DuplicateKeyError
@@ -19,8 +20,7 @@ class APIHandler(object):
     """docstring for APIHandler"""
     def __init__(self, auth_data, max_nreqs=10):
         self.auth_data = auth_data
-        self.max_nreqs = max_nreqs
-        # self.tweets = defaultdict(list)
+        self.index = choice(range(len(auth_data)))
         client = MongoClient(MONGO_HOST)
         self.tweets = client.paso2017_async
         # para marcar hasta la página actual que se han bajado tweets para cada usuario
@@ -40,43 +40,20 @@ class APIHandler(object):
             count += self.tweets.get_collection(collection_name).count()
         return count
 
-    def get_fresh_connection(self, credential_index):
-        success = False
-        while not success:
+    def get_fresh_connection(self):
+        while True:
             try:
-                d = self.auth_data[credential_index]
-                print "Switching to API Credentials #%d" % credential_index
-                auth = AppAuthHandler(d['consumer_key'], d['consumer_secret'])
-                self.connections[credential_index] = API(
-                    auth_handler=auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
-                return self.connections[credential_index]
+                self.index = (self.index + 1) % len(self.auth_data)
+                if not self.connections.get(self.index, False):
+                    d = self.auth_data[self.index]
+                    print "Switching to API Credentials #%d" % self.index
+                    auth = AppAuthHandler(d['consumer_key'], d['consumer_secret'])
+                    self.connections[self.index] = API(
+                        auth_handler=auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True)
+                return self.connections[self.index]
             except TweepError, e:
                 print("Error trying to connect: %s" % e.message)
                 sleep(10)
-
-    def set_connection(self, credential_index):
-        if not self.connections.get(credential_index, False):
-            self.get_fresh_connection(credential_index)
-        # else:
-        #     print "Using API Credential #{0}".format(credential_index)
-
-    def traer_seguidores(self, credential_index, uid, date_lower_limit, **kwargs):
-        cursor = -1
-        self.set_connection(credential_index)
-        while cursor:
-            while True:
-                try:
-                    fs, (_, cursor) = self.connection[credential_index].followers_ids(
-                        count=5000, cursor=cursor, **kwargs)
-                    self.feeds[uid] += fs
-                    print "fetched %d followers so far." % len(self.feeds)
-                except TweepError, e:
-                    if 'rate limit' not in e.reason.lower():
-                        raise e
-                    else:
-                        print e
-                        print "Rate limit reached for this conexion"
-                        sleep(0)
 
     def _end_uid_connection(self, uid):
         self.tweets_active_pages[uid] = -1
@@ -100,22 +77,22 @@ class APIHandler(object):
                 pass
         return False
 
-    def traer_timeline(self, uid, credential_index, n_pages=None, desde=None, hasta=None, dia=None):
+    def traer_timeline(self, uid, n_pages=None, desde=None, hasta=None, dia=None):
         if self.tweets_active_pages[uid] != -1:
             # no se han terminado de cargar los tweets de este usuario
             done = False
             if dia:
                 desde = dia
                 hasta = dia
-            self.set_connection(credential_index)
+            connection = self.get_fresh_connection()
             while not done:
                 try:
                     self.tweets_active_pages[uid] += 1
                     page = self.tweets_active_pages[uid]
-                    # print uid, page
                     if n_pages and page > n_pages:
                         break
-                    page_tweets = self.connections[credential_index].user_timeline(
+                    print "uid={0}, page={1}, credential={2}".format(uid, page, self.index)
+                    page_tweets = connection.user_timeline(
                         user_id=uid, page=page)
                     if not page_tweets:
                         break
@@ -126,7 +103,7 @@ class APIHandler(object):
                 except Exception, e:
                     # traceback.print_exc()
                     print("Error {0}: processing id={1} with credential={2}".format(
-                        e, uid, credential_index))
+                        e, uid, self.index))
                     if e.message == u'Not authorized.':
                         self._end_uid_connection(uid)
                         break
@@ -135,6 +112,7 @@ class APIHandler(object):
                         # ahí en las nuevas bajadas
                         self.tweets_active_pages[uid] = page
                         print "Moving to another connection ..."
+                        connection = self.get_fresh_connection()
                         sleep(0)
 
 

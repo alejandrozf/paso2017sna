@@ -46,8 +46,8 @@ uids = cand_ids + uids
 uids = []
 # uids += sample(g.predecessors(cand_ids[0]), 100)
 # uids += sample(g.predecessors(cand_ids[1]), 100)
-uids += g.predecessors(cand_ids[0])[:100]
-uids += g.predecessors(cand_ids[1])[:100]
+uids += g.predecessors(cand_ids[0])[:200]
+uids += g.predecessors(cand_ids[1])[:200]
 uids = cand_ids + list(set(uids))
 
 # fpath = join(DATA_PATH, "tl_uids.json")
@@ -69,10 +69,11 @@ credential_index_list = sample(xrange(n_auth_data), n_auth_data)
 POOL_SIZE = 15
 pool = Pool(POOL_SIZE)
 
+for uid in uids:
+    pool.spawn(TW.traer_timeline, uid, desde=DESDE, hasta=HASTA)
+
 try:
-    for _, uid in enumerate(uids):
-        for credential_index in credential_index_list:
-            pool.spawn(TW.traer_timeline, uid, credential_index, desde=DESDE, hasta=HASTA)
+    pool.join()
 except KeyboardInterrupt:
     pass
 finally:
@@ -81,7 +82,7 @@ finally:
     n_users = len(uids)
     total_time = time() - init_total_time
     avg_tweets_per_user = n_tweets / n_users
-    avg_time_per_tweet = total_time / n_tweets
+    avg_time_per_tweet = total_time / n_tweets if n_tweets != 0 else 0
     avg_user_time = total_time / n_users
 
     print "Tiempo total: {0} segundos".format(total_time)
