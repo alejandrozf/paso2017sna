@@ -78,7 +78,7 @@ class APIHandler(object):
                         print "Rate limit reached for this conexion"
                         sleep(0)
 
-    def _end_uid_connection(self, uid, added_time=None):
+    def _end_uid_connection(self, uid):
         self.tweets_active_pages[uid] = -1
         # n_tweets_uid = len(self.tweets[uid])
         # print "Done with uid:{0}, {1} tweets fetched ".format(uid, n_tweets_uid)
