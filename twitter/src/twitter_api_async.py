@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from gevent import monkey, sleep; monkey.patch_all()
-import traceback
+# import traceback
 
 from collections import defaultdict
 
-from pymongo import MongoClient
+from pymongo import MongoClient, ASCENDING
+from pymongo.errors import DuplicateKeyError
 from tweepy import AppAuthHandler, API
 from tweepy.error import TweepError
 
 from localsettings import AUTH_DATA
 
-MONGO_HOST = 'mongodb://localhost/twitterdb'
+MONGO_HOST = 'mongodb://localhost/paso2017_async'
 
 
 class APIHandler(object):
@@ -79,12 +80,11 @@ class APIHandler(object):
 
     def _end_uid_connection(self, uid, added_time=None):
         self.tweets_active_pages[uid] = -1
-        if added_time:
-            self.user_tweets_download_time[uid] += added_time
         # n_tweets_uid = len(self.tweets[uid])
         # print "Done with uid:{0}, {1} tweets fetched ".format(uid, n_tweets_uid)
 
     def _add_tweets(self, uid, page_tweets, desde, hasta):
+        self.tweets[uid].create_index([('text', ASCENDING)], unique=True)
         for tw in page_tweets:
             # print(tw.text)
             if desde and tw.created_at.date() < desde:
@@ -93,7 +93,11 @@ class APIHandler(object):
             if hasta and tw.created_at.date() > hasta:
                 continue
             tweet_doc = tw._json
-            self.tweets[uid].update_one(tweet_doc, {'$set': tweet_doc}, upsert=True)
+            try:
+                self.tweets[uid].update_one(tweet_doc, {'$set': tweet_doc}, upsert=True)
+            except DuplicateKeyError:
+                # print "Found duplicate tweet {0}".format(tweet_doc['text'].encode('utf-8'))
+                pass
         return False
 
     def traer_timeline(self, uid, credential_index, n_pages=None, desde=None, hasta=None, dia=None):
@@ -120,10 +124,9 @@ class APIHandler(object):
                     else:
                         done = self._add_tweets(uid, page_tweets, desde, hasta)
                 except Exception, e:
-                    traceback.print_exc()
-                    # print e.__class__.__name__
-                    # print("Error {0}: processing id={1} with credential={2}".format(
-                    #     e.message, uid, credential_index))
+                    # traceback.print_exc()
+                    print("Error {0}: processing id={1} with credential={2}".format(
+                        e, uid, credential_index))
                     if e.message == u'Not authorized.':
                         self._end_uid_connection(uid)
                         break
