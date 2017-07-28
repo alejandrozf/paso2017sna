@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import division
-from gevent import monkey, spawn, joinall; monkey.patch_all()
+from gevent.pool import Pool
+from gevent import monkey; monkey.patch_all()
 
 import networkx as nx
 
@@ -62,18 +63,16 @@ tweets = {}
 n_tweets = 0
 users_time = []
 
-gevent_funcs = []
-
 n_auth_data = len(AUTH_DATA)
 credential_index_list = sample(xrange(n_auth_data), n_auth_data)
 
-for _, uid in enumerate(uids):
-    for credential_index in credential_index_list:
-        gevent_funcs.append(
-            spawn(TW.traer_timeline, uid, credential_index, desde=DESDE, hasta=HASTA))
+POOL_SIZE = 15
+pool = Pool(POOL_SIZE)
 
 try:
-    joinall(gevent_funcs)
+    for _, uid in enumerate(uids):
+        for credential_index in credential_index_list:
+            pool.spawn(TW.traer_timeline, uid, credential_index, desde=DESDE, hasta=HASTA)
 except KeyboardInterrupt:
     pass
 finally:
