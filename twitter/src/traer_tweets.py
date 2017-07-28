@@ -21,7 +21,7 @@ DESDE = date(year=2017, month=7, day=21)
 HASTA = date(year=2017, month=7, day=23)
 PAGES = 30
 
-MONGO_HOST = 'mongodb://localhost/twitterdb'
+MONGO_HOST = 'mongodb://localhost/paso2017_sync'
 client = MongoClient(MONGO_HOST)
 
 tweets_db = client.paso2017_sync
@@ -53,8 +53,8 @@ uids = cand_ids + uids
 uids = []
 # uids += sample(g.predecessors(cand_ids[0]), 100)
 # uids += sample(g.predecessors(cand_ids[1]), 100)
-uids += g.predecessors(cand_ids[0])[:100]
-uids += g.predecessors(cand_ids[1])[:100]
+uids += g.predecessors(cand_ids[0])[:200]
+uids += g.predecessors(cand_ids[1])[:200]
 uids = cand_ids + list(set(uids))
 
 # fpath = join(DATA_PATH, "tl_uids.json")
