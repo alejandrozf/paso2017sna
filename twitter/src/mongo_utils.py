@@ -1,5 +1,9 @@
-from pymongo import MongoClient
+import json
+import glob
 import subprocess
+
+from pymongo import MongoClient
+
 
 client = MongoClient()
 
@@ -39,7 +43,13 @@ def export_db(db, unified_file=False):
         coll_count = db.get_collection(collection_name).find().count()
         if coll_count > 0:
             subprocess.call(
-                "mongoexport -d {0} -c {1} -o {2}.json".format(
+                "mongoexport -d {0} -c {1} -o {2}.json --jsonArray".format(
                     db.name, collection_name, collection_name), shell=True)
-        if unified_file:
-            subprocess.call("cat *.json > {0}".format(unified_file), shell=True)
+    if unified_file:
+        result = []
+        for f in glob.glob("*.json"):
+            with open(f, "rb") as infile:
+                result.append(json.load(infile))
+
+        with open(unified_file, "wb") as outfile:
+            json.dump(result, outfile)
