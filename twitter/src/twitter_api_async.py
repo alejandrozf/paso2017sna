@@ -61,7 +61,7 @@ class APIHandler(object):
         # print "Done with uid:{0}, {1} tweets fetched ".format(uid, n_tweets_uid)
 
     def _add_tweets(self, uid, page_tweets, desde, hasta):
-        self.tweets[uid].create_index([('text', ASCENDING)], unique=True)
+        self.tweets[uid].create_index([('id_str', ASCENDING)], unique=True)
         for tw in page_tweets:
             # print(tw.text)
             if desde and tw.created_at.date() < desde:
