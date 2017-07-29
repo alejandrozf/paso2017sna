@@ -13,12 +13,12 @@ from time import time
 
 from twitter_api_async import API_HANDLER as TW
 
-from localsettings import AUTH_DATA, DATA_PATH
+from localsettings import DATA_PATH
 
 DATA_PATH = join(DATA_PATH, './reporte_07_26')
 
-DESDE = date(year=2017, month=7, day=21)
-HASTA = date(year=2017, month=7, day=23)
+DESDE = date(year=2017, month=7, day=25)
+HASTA = date(year=2017, month=7, day=28)
 # PAGES = 30
 
 cuentas = [
@@ -44,10 +44,10 @@ uids = cand_ids + uids
 # Por ahora traemos tweets solo de 100 en cada audiencia
 
 uids = []
-# uids += sample(g.predecessors(cand_ids[0]), 100)
-# uids += sample(g.predecessors(cand_ids[1]), 100)
-uids += g.predecessors(cand_ids[0])[:200]
-uids += g.predecessors(cand_ids[1])[:200]
+uids += sample(g.predecessors(cand_ids[0]), 200)
+uids += sample(g.predecessors(cand_ids[1]), 200)
+# uids += g.predecessors(cand_ids[0])[:200]
+# uids += g.predecessors(cand_ids[1])[:200]
 uids = cand_ids + list(set(uids))
 
 # fpath = join(DATA_PATH, "tl_uids.json")
@@ -57,14 +57,8 @@ uids = cand_ids + list(set(uids))
 # with open("tl_uids.json") as f:
 #     uids = json.load(f)
 
-tweets = {}
 # with open('tweets_%s.json' % datetime.strftime(DIA, '%m-%d')) as f:
 #     tweets = json.load(f)
-n_tweets = 0
-users_time = []
-
-n_auth_data = len(AUTH_DATA)
-credential_index_list = sample(xrange(n_auth_data), n_auth_data)
 
 POOL_SIZE = 15
 pool = Pool(POOL_SIZE)
@@ -90,6 +84,4 @@ finally:
     print "Tiempo promedio de descarga de cada tweet: {0} segundos".format(avg_time_per_tweet)
     print "Tiempo promedio de descarga de todos los tweets de un usuario: {0} segundos".format(
         avg_user_time)
-
     print "Descargados {0} tweets ...".format(n_tweets)
-    # TW.save_tweets(DESDE)

@@ -91,7 +91,7 @@ class APIHandler(object):
                     page = self.tweets_active_pages[uid]
                     if n_pages and page > n_pages:
                         break
-                    print "uid={0}, page={1}, credential={2}".format(uid, page, self.index)
+                    # print "uid={0}, page={1}, credential={2}".format(uid, page, self.index)
                     page_tweets = connection.user_timeline(
                         user_id=uid, page=page)
                     if not page_tweets:
