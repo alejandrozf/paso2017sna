@@ -25,7 +25,7 @@ class APIHandler(object):
         self.tweets = client.paso2017_async
         # para marcar hasta la página actual que se han bajado tweets para cada usuario
         # y proseguir la bajada a partir de ahí
-        self.tweets_active_pages = defaultdict(int)
+        self.tweets_active_pages = defaultdict(lambda: 1)
         # para guardar los tiempos de bajada de tweets por usuario
         self.feeds = {}
         # guardamos las conexiones por credencial para poder reusarlas luego de ser necesario
@@ -87,7 +87,6 @@ class APIHandler(object):
             connection = self.get_fresh_connection()
             while not done:
                 try:
-                    self.tweets_active_pages[uid] += 1
                     page = self.tweets_active_pages[uid]
                     if n_pages and page > n_pages:
                         break
@@ -100,6 +99,7 @@ class APIHandler(object):
                         self._add_tweets(uid, page_tweets, False, False)
                     else:
                         done = self._add_tweets(uid, page_tweets, desde, hasta)
+                    self.tweets_active_pages[uid] += 1
                 except Exception, e:
                     # traceback.print_exc()
                     print("Error {0}: processing id={1} with credential={2}".format(
@@ -108,9 +108,6 @@ class APIHandler(object):
                         self._end_uid_connection(uid)
                         break
                     else:
-                        # salvando el número de página de tweets bajados para retomar a partir de
-                        # ahí en las nuevas bajadas
-                        self.tweets_active_pages[uid] = page
                         print "Moving to another connection ..."
                         connection = self.get_fresh_connection()
                         sleep(0)
