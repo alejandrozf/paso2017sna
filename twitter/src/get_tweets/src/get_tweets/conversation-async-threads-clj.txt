@@ -1,0 +1,47 @@
+[03:18] <dielli> Hi clojurists! I have a question, there is something in clojure (core or library) like python's gevent??
+[03:18] <justin_smith> we do have async network IO, but we don't need it as much
+[03:19] <justin_smith> some of the network libs that support async client usage include clj-http and aleph and http-kit
+[03:19] == je [~je@93-161-15-194-static.dk.customer.tdc.net] has joined #clojure
+[03:21] <dielli> justin_smith: thanks, I will check that, :)
+[03:22] <justin_smith> dielli: in python you can block the entire interpreter pretty easily, in clojure it's a lot harder to block the entire jvm, so for most cases it's simpler to just use a thread and either wait on your result(s) or call some callback when done
+[03:22] == SkinnyMelon [~SkinnyMel@88.98.202.61] has quit [Ping timeout: 248 seconds]
+[03:23] <justin_smith> though async does come into play if you need thousands of parallel things going on - threads end up bogging things down at high enough counts
+[03:24] == je [~je@93-161-15-194-static.dk.customer.tdc.net] has quit [Client Quit]
+[03:26] == noam [~noam@77.138.133.172] has quit [Quit: Leaving]
+[03:27] == jgertm [~jgertm@c-73-170-252-167.hsd1.ca.comcast.net] has quit [Ping timeout: 260 seconds]
+[03:27] <dielli> justin_smith core.async would be a good choice too?
+[03:30] <justin_smith> dielli: core.async is for when you have a lot of things that need to be asyncronous and you want to coordinate them
+[03:30] <justin_smith> which is cool - but first double check you need async, most of the time your code is easier to debug, and performs better, if you don't use async, beleive it or not
+[03:31] <justin_smith> async isn't an end unto itself, it's a liability that we can take on in order to do something else that we need
+[03:33] == rohitpaulk [~rohitpaul@183.83.199.196] has joined #clojure
+[03:35] <dysfun> but i hear async is webscale
+[03:35] <random_numbers> dysfun: heh
+[03:35] <random_numbers> roll 1d100 for selection on Perils of Buzzwords
+[03:36] <dielli> I want to make a lot of asynchronous call of Twitter api...
+[03:36] <dysfun> when are we going to deal with the fundamental non-webscale-ness of non-async code?
+[03:36] <justin_smith> why async?
+[03:36] <dysfun> dielli: "a lot"?
+[03:37] <random_numbers> justin_smith: Probably because of network unreliability?
+[03:37] <justin_smith> dielli: I use the twitter apis - their rate limits are too low to run out of performance with just threads
+[03:37] <justin_smith> and just threads is a much simpler way to do it
+[03:38] <justin_smith> random_numbers: how does async help with network unreliability?
+[03:38] <dysfun> justin_smith: or maybe twitter rate limited you for not being webscale enough? ;)
+[03:38] <dysfun> (this really happens in the ad bidding world)
+[03:39] <random_numbers> justin_smith: Non-blocking.
+[03:39] <justin_smith> dysfun: their rate limits are documented, and we have a legacy deal that gives us better access beyond that - we can saturate these in one vm using real threads without perf issues
+[03:39] <dielli> justin_smith: I made a program with Python that works fine for me using gevent,  but I want to port it to Clojure ...
+[03:39] <justin_smith> random_numbers: why would blocking matter if it's happening in another thread?
+[03:39] <random_numbers> justin_smith: If you choose to use threads.
+[03:40] <justin_smith> random_numbers: to be clear, I am saying "use threads instead of async whenever possible, it performs better (up to a point), and it's easier to read, debug, and reason about"
+[03:40] <dysfun> justin_smith: well it's an awful lot less amusing now
+[03:41] <random_numbers> justin_smith: I wasn't arguing to the contrary. I don't have enough experience with either to do so.
+[03:42] == WhiskyRyan [~WhiskyRya@c-73-242-224-183.hsd1.nm.comcast.net] has quit [Quit: My MacBook has gone to sleep. ZZZzzz…]
+[03:43] <justin_smith> dielli: I doubt you'll find something thatis a 1:1 match with how it works, but I strongly suspect that if you use future instead of callbacks / green threads / core.async the code will be simpler than what you started with
+[03:43] <justin_smith> but I don't know your code like you do, of course
+[03:43] <justin_smith> core.async is great if you need to do complex coordination of tasks that are not CPU or IO bound
+[03:44] == rcg [~rcg@port-92-193-68-229.dynamic.qsc.de] has joined #clojure
+[03:45] == rcg [~rcg@port-92-193-68-229.dynamic.qsc.de] has quit [Client Quit]
+[03:46] == ArcaTech [~textual@c-50-161-123-55.hsd1.ca.comcast.net] has joined #clojure
+[03:47] <dielli> justin_smith: uhmm ... ok , sounds like I should analize a little more to choose an alternative
+[03:51] == leaves [~leaves@unaffiliated/leaves] has joined #clojure
+[03:55] <dielli> justin_smith: thanks a lot for your suggestions :)
