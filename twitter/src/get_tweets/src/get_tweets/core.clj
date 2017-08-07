@@ -11,7 +11,7 @@
         [twitter.callbacks]
         [twitter.callbacks.handlers]
         [twitter.api.restful])
-  (:import [twitter.callbacks.protocols SyncSingleCallback])
+  (:import [twitter.callbacks.protocols AsyncSingleCallback])
   (:gen-class))
 
 (def api-credentials (parse-stream (io/reader "credentials.json")))
