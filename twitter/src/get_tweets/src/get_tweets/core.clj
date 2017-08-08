@@ -4,7 +4,8 @@
   ;; JSON library
   (:require [cheshire.core :refer :all])
   ;; MongoDB library
-  (:require [monger.core :as mg])
+  (:require [monger.core :as mg]
+            [monger.collection :as mc])
   (:import [com.mongodb MongoOptions ServerAddress])
   ;; Twitter API
   (:use [twitter.oauth]
@@ -20,12 +21,15 @@
 (def active-pages (agent {}))
 
 ;; MongoDB connection
-(def mongo-host "mongodb://localhost/paso2017_async")
+(def mongo-host "localhost")
 (def mongo-port 27017)
+(def db (mg/get-db mongo-conn "paso2017_async"))
+(def mongo-conn (mg/connect {:host mongo-host :port mongo-port}))
 
 ;; Reading credentials
 (def api-credentials (parse-stream (io/reader "credentials.json")))
 (def len-credentials (count api-credentials))
+
 
 (defn choose-oauth-credentials
   "Gives the credentials according 'index'"
@@ -46,11 +50,15 @@
               @current-index (choose-oauth-credentials @current-index))))
 
 (defn get-timeline
-  "Gets all tweets from user in range of dates"
-  ([uid day]
-   "pass1")
-  ([uid from to]
-   "pass2"))
+  "Gets all tweets from user in range of dates or according to
+   number of tweets by pagination"
+  ([uid & {:keys [pages counts from to day]
+           :or {pages nil
+                counts 20
+                from nil
+                to nil
+                day nil}}]
+   "pass"))
 
 ;; (def user-id "845696348")
 ;; (def user-timeline (statuses-user-timeline :oauth-creds my-creds
